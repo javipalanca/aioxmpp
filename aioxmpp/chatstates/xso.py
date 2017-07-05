@@ -1,5 +1,5 @@
 ########################################################################
-# File name: __init__.py
+# File name: xso.py
 # This file is part of: aioxmpp
 #
 # LICENSE
@@ -19,3 +19,23 @@
 # <http://www.gnu.org/licenses/>.
 #
 ########################################################################
+import enum
+
+import aioxmpp.xso as xso
+import aioxmpp.stanza as stanza
+
+from aioxmpp.utils import namespaces
+
+
+namespaces.xep0085 = "http://jabber.org/protocol/chatstates"
+
+
+class ChatState(enum.Enum):
+    ACTIVE = (namespaces.xep0085, "active")
+    COMPOSING = (namespaces.xep0085, "composing")
+    PAUSED = (namespaces.xep0085, "paused")
+    INACTIVE = (namespaces.xep0085, "inactive")
+    GONE = (namespaces.xep0085, "gone")
+
+
+stanza.Message.xep0085_chatstate = xso.ChildTag(ChatState, allow_none=True)

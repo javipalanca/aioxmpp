@@ -121,6 +121,10 @@ class ConversationFeature(enum.Enum):
 
        Allows use of :meth:`~.AbstractConversation.set_topic`.
 
+    .. attrubute:: SET_STATE
+
+       Allows use of :meth:`~.AbstractConversation.set_state`
+
     """
 
     BAN = 'ban'
@@ -131,11 +135,13 @@ class ConversationFeature(enum.Enum):
     INVITE_MEDIATED = 'invite-mediated'
     INVITE_UPGRADE = 'invite-upgrade'
     KICK = 'kick'
+    LEAVE = 'leave'
     SEND_MESSAGE = 'send-message'
     SEND_MESSAGE_TRACKED = 'send-message-tracked'
     SET_TOPIC = 'set-topic'
     SET_NICK = 'set-nick'
     SET_NICK_OF_OTHERS = 'set-nick-of-others'
+    SET_STATE = 'set-state'
 
 
 class ConversationState(enum.Enum):
@@ -278,7 +284,7 @@ class AbstractConversation(metaclass=abc.ABCMeta):
        :param source: How the message was acquired
        :type source: :class:`~.MessageSource`
        :param tracker: A message tracker which tracks an outbound message.
-       :type trakcre: :class:`aioxmpp.tracking.MessageTracker`
+       :type tracker: :class:`aioxmpp.tracking.MessageTracker`
 
        This signal is emitted on the following events:
 
@@ -447,6 +453,8 @@ class AbstractConversation(metaclass=abc.ABCMeta):
 
     .. automethod:: set_topic
 
+    .. automethod:: set_state
+
     Interface solely for subclasses:
 
     .. attribute:: _client
@@ -527,7 +535,31 @@ class AbstractConversation(metaclass=abc.ABCMeta):
         method may still raise an :class:`aioxmpp.XMPPCancelError` due for
         other conditions such as ``item-not-found``).
         """
-        return set()
+        return frozenset()
+
+    def _on_message(self, msg, member, source, tracker=None, **kwargs):
+        """
+        Handle a received message.
+
+       :param msg: Message which was received.
+       :type msg: :class:`aioxmpp.Message`
+       :param member: The member object of the sender.
+       :type member: :class:`.AbstractConversationMember`
+       :param source: How the message was acquired
+       :type source: :class:`~.MessageSource`
+       :param tracker: A message tracker which tracks an outbound message.
+       :type trackre: :class:`aioxmpp.tracking.MessageTracker`
+
+        The default operation is to emit the :attr:`on_message`
+        signal. Mixins shall overwrite this method to process and
+        filter incoming messages. To let a message be processed by the
+        default handling and other mixins they pass the call on with
+        :func:`super`::
+
+            super()._on_message(msg, member, source, tracker=tracker, **kwargs)
+
+        """
+        self.on_message(msg, member, source, tracker=tracker, **kwargs)
 
     def send_message(self, body):
         """
@@ -754,6 +786,15 @@ class AbstractConversation(metaclass=abc.ABCMeta):
 
         """
         raise self._not_implemented_error("changing the topic")
+
+    def set_state(self, new_state):
+        """
+        Set the conversation state.
+
+        :param new_state: the new conversation state
+        :type new_state: :class:`ConversationState`
+        """
+        raise self._not_implementer_error("setting the conversation state")
 
     @asyncio.coroutine
     def leave(self):

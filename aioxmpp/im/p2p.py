@@ -28,11 +28,13 @@ from .conversation import (
     AbstractConversationMember,
     AbstractConversation,
     AbstractConversationService,
+    ConversationFeature,
 )
 
 from .dispatcher import IMDispatcher, MessageSource
 
 from .service import ConversationService
+from .chatstates import ChatStatesMixin
 
 
 class Member(AbstractConversationMember):
@@ -55,7 +57,7 @@ class Member(AbstractConversationMember):
         return self._conversation_jid
 
 
-class Conversation(AbstractConversation):
+class Conversation(ChatStatesMixin, AbstractConversation):
     """
     Implementation of :class:`~.im.conversation.AbstractConversation` for
     one-on-one conversations.
@@ -74,13 +76,22 @@ class Conversation(AbstractConversation):
             Member(peer_jid, False),
         )
 
+    @property
+    def features(self):
+        return (
+            frozenset([ConversationFeature.SEND_MESSAGE,
+                       ConversationFeature.SEND_MESSAGE_TRACKED,
+                       ConversationFeature.LEAVE]) |
+            super().features
+        )
+
     def _handle_message(self, msg, peer, sent, source):
         if sent:
             member = self.__members[0]
         else:
             member = self.__members[1]
 
-        self.on_message(msg, member, source)
+        self._on_message(msg, member, source)
 
     @property
     def jid(self):
