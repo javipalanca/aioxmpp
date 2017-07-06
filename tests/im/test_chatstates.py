@@ -22,6 +22,8 @@
 import unittest
 import unittest.mock
 
+import aioxmpp
+
 from aioxmpp.chatstates import ChatState
 
 from aioxmpp.im.conversation import AbstractConversation
@@ -95,6 +97,19 @@ class TestChatStateMixin(unittest.TestCase):
             self.c.features,
             [ConversationFeature.SET_STATE]
         )
+
+    def test___on_leave_is_depsignal_handler(self):
+        aioxmpp.service.is_depsignal_handler(
+            AbstractConversation,
+            "on_leave",
+            ChatStatesMixin._ChatStatesMixin__on_leave,
+        )
+
+    def test___on_leave(self):
+        with unittest.mock.patch.object(
+                self.c, "_ChatStatesMixin__chatstate_cache") as cache:
+            self.c._ChatStatesMixin__on_leave(unittest.mock.sentinel.member)
+        cache.pop.assert_called_once_with(unittest.mock.sentinel.member, None)
 
     def test_set_state(self):
         self.c.set_state(ConversationState.COMPOSING)

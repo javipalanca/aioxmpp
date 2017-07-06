@@ -53,6 +53,11 @@ class ChatStatesMixin(conversation.AbstractConversation):
         self.__chatstate_cache = {}
         super().__init__(client, **kwargs)
 
+    @aioxmpp.service.depsignal(conversation.AbstractConversation,
+                               "on_leave")
+    def __on_leave(self, member, **kwargs):
+        self.__chatstate_cache.pop(member, None)
+
     @property
     def features(self):
         return (frozenset([conversation.ConversationFeature.SET_STATE]) |
