@@ -25,7 +25,7 @@ import aioxmpp.im.conversation as conversation
 import aioxmpp.chatstates as chatstates
 
 
-INGOING_STATE_MAP = {
+INBOUND_STATE_MAP = {
     chatstates.ChatState.ACTIVE: conversation.ConversationState.ACTIVE,
     chatstates.ChatState.COMPOSING: conversation.ConversationState.COMPOSING,
     chatstates.ChatState.PAUSED: conversation.ConversationState.PAUSED,
@@ -34,7 +34,7 @@ INGOING_STATE_MAP = {
 }
 
 
-OUTGOING_STATE_MAP = {value: key for key, value in INGOING_STATE_MAP.items()}
+OUTBOUND_STATE_MAP = {value: key for key, value in INBOUND_STATE_MAP.items()}
 
 
 class ChatStatesMixin(conversation.AbstractConversation):
@@ -60,7 +60,7 @@ class ChatStatesMixin(conversation.AbstractConversation):
 
     def _on_message(self, msg, member, source, tracker=None, **kwargs):
         if msg.xep0085_chatstate is not None:
-            incoming_state = INGOING_STATE_MAP[msg.xep0085_chatstate]
+            incoming_state = INBOUND_STATE_MAP[msg.xep0085_chatstate]
             if incoming_state != self.__chatstate_cache.get(member, None):
                 self.__chatstate_cache[member] = incoming_state
                 self.on_state_changed(
@@ -86,7 +86,7 @@ class ChatStatesMixin(conversation.AbstractConversation):
         return super().send_message_tracked(msg, timeout=timeout)
 
     def set_state(self, state):
-        state = OUTGOING_STATE_MAP.get(state, chatstates.ChatState.ACTIVE)
+        state = OUTBOUND_STATE_MAP.get(state, chatstates.ChatState.ACTIVE)
         if self.__state_manager.handle(state):
             msg = aioxmpp.Message(aioxmpp.MessageType.NORMAL)
             msg.xep0085_chatstate = state
